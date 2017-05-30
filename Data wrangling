@@ -1,0 +1,23 @@
+Data wrangling steps:
+There are two data sets. One is from yahoo finance, tracking historical prices for Dow Jones Index for the last 5 years. The second dataset is from google trends, tracking the number of search queries for a particular term over the same period of time as the DJI historical prices. Both data sets are pretty neat, conveniently available in csv format to download, with similar structure and data types. No transposing or pivoting of dataframes, no fuzzy matching of string data was involved. Still, I have taken a few steps to clean my data for my capstone project.
+ 
+1. pd.concat()
+Historical price data from yahoo finance is available on a daily basis. However, google trends daily data is available only for periods no longer than 90 days. Data for longer timeframes are available only in weekly aggregate batches. To get the daily google trends data, I downloaded quarterly data (90 days) for each year, loaded each into a dataframe, then concatenated them into one with pd.concat([df1, df2, … dfn]) function.
+ 
+2. df[df.duplicated([‘Column’], keep=False)
+Check for duplicate data.
+ 
+3. df.groupby(‘Date’, as_index=False).mean()
+Quarterly dataframes have overlapping time series data (1st quarter ending  - April 1, 2nd quarter starting - April 1). To remove the duplicate data from the concatenated dataframe, I grouped the data in the ‘Date’ column with the values calculated as a mean (although the same date, the values are different for unknown reason).
+ 
+4. from pandas.tseries.holiday import USFederalHolidayCalendar as cal
+The google trends include data for every single day, including weekends and holidays. DIJ dataframe exclude weekend and holidays data. To remove the holidays data from google trends I included US Federal Holidays library from pandas, then removed those dates that fall into a list of holidays list by df[‘Date’].isin(holidays) function. Then I sliced out weekend days with df[df[.index.dayofweek < 5] function.  For this to work, I converted the ‘Date’ column into a datetime type, the set it as index. Then I compared the lengths of the resulting google trends dataframe with DJI dataframe. The lengths were still different.
+ 
+5. pd.merge(df1, df2, on=’Column’)
+The simple solution is to just merge the concatenated google trends and DJI historical price dataframes into one by ‘Date’ column. ‘Date’ columns in each must be of similar type - checking by df.[‘Date’].describe() function. The type of merge is inner (by default) as I want only the the rows from each dataframes that matching values in the ‘Date’ columns. The length of the merged dataframe is the same as the DJI dataframe, as it doesn’t have data for weekends and holidays. 
+ 
+6. df.diff() and df.fillna()
+Added a few columns that show the difference of values in each column. This introduced a few null values into the dataframe. Replaced the null values with 0 by df.fillna(0) function.
+ 
+7. pd.isnull()
+Check if the dataframe has null values by finding indices where df is null.
